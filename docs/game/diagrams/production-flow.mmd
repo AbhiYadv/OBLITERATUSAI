@@ -1,0 +1,13 @@
+flowchart TD
+    A[Canonical Design] --> B[Claude Audit / Plan]
+    B --> C{User Approval}
+    C -- revise --> A
+    C -- approved --> D[Fable Visual Direction]
+    D --> E{Visual Approval}
+    E -- revise --> D
+    E -- approved --> F[Codex Implementation]
+    F --> G[Automated Validation]
+    G --> H[Manual Browser Test]
+    H --> I{Acceptance Gate}
+    I -- fail --> B
+    I -- pass --> J[Next Bounded Task]

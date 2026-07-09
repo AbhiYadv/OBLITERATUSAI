@@ -1,0 +1,34 @@
+{
+  "task_id": "CLAUDE-02",
+  "title": "Mission Framework Architecture Plan",
+  "reasoning_mode": "extra_high",
+  "work_root": "/Volumes/Crucial X9/nexo-ai-clean/.claude/worktrees/bold-tu-ab067b/apps/nexo-world",
+  "mode": "plan_only",
+  "canonical_inputs": [
+    "docs/02-GAME-DESIGN-DOCUMENT.md",
+    "docs/03-VERTICAL-SLICE-MERIDIAN-SIGNAL-FAILURE.md",
+    "docs/06-TECHNICAL-ARCHITECTURE.md",
+    "governance/LOCKS.md"
+  ],
+  "objectives": [
+    "Design the smallest data-driven mission framework for one mission.",
+    "Define interfaces for interactions, dialogue, evidence, decisions, validation, world reactions, and AAR.",
+    "Integrate with current systems without a rewrite."
+  ],
+  "required_output": [
+    "TypeScript interfaces",
+    "Mission JSON schema",
+    "Event list",
+    "State transition table",
+    "File plan",
+    "Testing plan",
+    "Migration plan",
+    "Implementation slices"
+  ],
+  "stop_conditions": [
+    "Do not implement.",
+    "Do not add a backend.",
+    "Do not add multiplayer.",
+    "Do not redesign the player or city."
+  ]
+}

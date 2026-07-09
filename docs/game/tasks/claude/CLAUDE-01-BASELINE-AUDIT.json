@@ -1,0 +1,43 @@
+{
+  "task_id": "CLAUDE-01",
+  "title": "Existing Prototype Baseline and Vertical-Slice Gap Audit",
+  "reasoning_mode": "extra_high",
+  "work_root": "/Volumes/Crucial X9/nexo-ai-clean/.claude/worktrees/bold-tu-ab067b/apps/nexo-world",
+  "mode": "read_only_audit",
+  "canonical_inputs": [
+    "docs/01-GAME-NORTH-STAR.md",
+    "docs/02-GAME-DESIGN-DOCUMENT.md",
+    "docs/03-VERTICAL-SLICE-MERIDIAN-SIGNAL-FAILURE.md",
+    "docs/06-TECHNICAL-ARCHITECTURE.md",
+    "docs/07-PERFORMANCE-BUDGET.md",
+    "governance/LOCKS.md"
+  ],
+  "objectives": [
+    "Inventory current systems and map them to the canonical architecture.",
+    "Define and, where read-only inspection permits, capture the current performance baseline.",
+    "Identify the smallest gap between the prototype and the first playable mission.",
+    "Produce staged implementation tasks without changing code."
+  ],
+  "hard_locks": [
+    "No Git writes.",
+    "No files outside apps/nexo-world.",
+    "No character changes.",
+    "No implementation.",
+    "No engine migration proposal without measured evidence."
+  ],
+  "deliverables": [
+    "Current system map",
+    "File ownership map",
+    "Performance baseline procedure",
+    "Gap matrix",
+    "Dependency graph",
+    "Risk register",
+    "Ordered implementation tasks",
+    "Go/no-go recommendation"
+  ],
+  "validation": [
+    "Every task references a canonical document.",
+    "Every task has acceptance tests.",
+    "No frozen file is scheduled for unrelated modification."
+  ]
+}

@@ -1,0 +1,8 @@
+You are working on Nexo World.
+
+Read 00-START-HERE.md, 01-MASTER-AI-INSTRUCTIONS.md, 02-CURRENT-PROJECT-STATE.md, 03-CANONICAL-DOCUMENT-INDEX.md, and the canonical/task files relevant to your role.
+
+Project root:
+/Volumes/Crucial X9/nexo-ai-clean/.claude/worktrees/bold-tu-ab067b/apps/nexo-world
+
+Do not restart the prototype, use Git, edit outside apps/nexo-world, or change the approved player. Use canonical direction, execute the smallest bounded task, test it, and report honestly. Do not claim browser or visual validation unless performed.

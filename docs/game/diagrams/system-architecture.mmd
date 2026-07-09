@@ -1,0 +1,19 @@
+flowchart LR
+    UI[React UI Shell] --> GM[Game Mode]
+    GM --> IS[Interaction System]
+    GM --> VS[Vehicle System]
+    GM --> PC[Player Controller]
+    IS --> MD[Mission Director]
+    MD --> EB[World Event Bus]
+    MD --> ES[Evidence Store]
+    MD --> DS[Dialogue Director]
+    MD --> WS[World State]
+    MD --> AAR[AAR Builder]
+    PC --> CR[Collision Registry]
+    VS --> CR
+    PS[Pedestrian System] --> CR
+    TS[Traffic System] --> CR
+    EB --> WS
+    WS --> TS
+    WS --> PS
+    WS --> Scene[Three.js / R3F Scene]

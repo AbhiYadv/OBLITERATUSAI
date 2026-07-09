@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<rect width="1200" height="900" fill="#eef1f3"/>
+<rect x="80" y="70" width="1040" height="760" rx="24" fill="#d8dde2" stroke="#30343b" stroke-width="4"/>
+<rect x="170" y="130" width="860" height="640" fill="#c7ccd1" stroke="#525861" stroke-width="3"/>
+<rect x="160" y="380" width="880" height="100" fill="#444a52"/>
+<rect x="550" y="120" width="100" height="660" fill="#444a52"/>
+<rect x="180" y="160" width="820" height="55" fill="#5a6068"/>
+<rect x="180" y="690" width="820" height="55" fill="#5a6068"/>
+<g fill="#f4f4f4"><rect x="500" y="395" width="12" height="70"/><rect x="525" y="395" width="12" height="70"/><rect x="663" y="395" width="12" height="70"/><rect x="688" y="395" width="12" height="70"/></g>
+<rect x="430" y="250" width="340" height="110" rx="12" fill="#7c93aa" stroke="#23303c" stroke-width="3"/>
+<text x="600" y="305" text-anchor="middle" font-family="Arial" font-size="28" fill="white">Operations Center</text>
+<rect x="700" y="505" width="270" height="140" rx="12" fill="#9b806b" stroke="#3f3026" stroke-width="3"/>
+<text x="835" y="575" text-anchor="middle" font-family="Arial" font-size="24" fill="white">Learning Campus</text>
+<rect x="730" y="235" width="270" height="125" rx="12" fill="#5f6c63" stroke="#26312a" stroke-width="3"/>
+<text x="865" y="300" text-anchor="middle" font-family="Arial" font-size="22" fill="white">Infrastructure Annex</text>
+<rect x="205" y="500" width="270" height="140" rx="12" fill="#b48762" stroke="#4b3425" stroke-width="3"/>
+<text x="340" y="575" text-anchor="middle" font-family="Arial" font-size="25" fill="white">Tool Row</text>
+<rect x="205" y="235" width="240" height="125" rx="12" fill="#6f7c8a" stroke="#2a3138" stroke-width="3"/>
+<text x="325" y="300" text-anchor="middle" font-family="Arial" font-size="24" fill="white">Garage</text>
+<ellipse cx="600" cy="565" rx="115" ry="80" fill="#7aa66f" stroke="#304a2b" stroke-width="3"/>
+<text x="600" y="560" text-anchor="middle" font-family="Arial" font-size="26" fill="white">Meridian Plaza</text>
+<text x="600" y="590" text-anchor="middle" font-family="Arial" font-size="18" fill="white">Project Garden</text>
+<circle cx="690" cy="430" r="20" fill="#f0b429" stroke="#5c430d" stroke-width="3"/>
+<text x="720" y="435" font-family="Arial" font-size="18" fill="#25282c">Signal Junction</text>
+<text x="600" y="45" text-anchor="middle" font-family="Arial" font-size="34" font-weight="bold" fill="#20242a">Nexo World — Meridian District</text>
+<text x="600" y="860" text-anchor="middle" font-family="Arial" font-size="20" fill="#40464d">Approx. 400 m × 400 m • Concept layout • Adapt to current coordinates</text>
+</svg>

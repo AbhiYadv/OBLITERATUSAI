@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "meridian-signal-failure",
+  "title": "Meridian Signal Failure",
+  "districtId": "meridian",
+  "estimatedMinutes": 30,
+  "startObjectiveId": "meet-maya",
+  "objectives": [
+    {
+      "id": "meet-maya",
+      "type": "talk",
+      "targetId": "agent-maya",
+      "text": "Meet Maya at the Operations Center",
+      "onComplete": [
+        {
+          "type": "evidence.collect",
+          "evidenceId": "EV-SYMPTOM-001"
+        },
+        {
+          "type": "objective.activate",
+          "objectiveId": "inspect-telemetry"
+        }
+      ]
+    },
+    {
+      "id": "inspect-telemetry",
+      "type": "inspect",
+      "targetId": "telemetry-kiosk-meridian",
+      "text": "Inspect the Meridian Telemetry Kiosk",
+      "onComplete": [
+        {
+          "type": "evidence.collect",
+          "evidenceId": "EV-TELEM-001"
+        },
+        {
+          "type": "evidence.collect",
+          "evidenceId": "EV-TELEM-002"
+        },
+        {
+          "type": "objective.activate",
+          "objectiveId": "question-elias"
+        }
+      ]
+    },
+    {
+      "id": "question-elias",
+      "type": "talk",
+      "targetId": "agent-elias",
+      "text": "Ask Elias about recent changes",
+      "onComplete": [
+        {
+          "type": "evidence.collect",
+          "evidenceId": "EV-DEPLOY-001"
+        },
+        {
+          "type": "objective.activate",
+          "objectiveId": "travel-annex"
+        }
+      ]
+    },
+    {
+      "id": "travel-annex",
+      "type": "reach",
+      "targetId": "infrastructure-annex",
+      "text": "Travel to the Infrastructure Annex",
+      "onComplete": [
+        {
+          "type": "objective.activate",
+          "objectiveId": "review-with-nia"
+        }
+      ]
+    },
+    {
+      "id": "review-with-nia",
+      "type": "talk",
+      "targetId": "agent-nia",
+      "text": "Review the evidence with Nia",
+      "requiresEvidence": [
+        "EV-TELEM-001",
+        "EV-TELEM-002",
+        "EV-DEPLOY-001"
+      ],
+      "onComplete": [
+        {
+          "type": "objective.activate",
+          "objectiveId": "choose-intervention"
+        }
+      ]
+    },
+    {
+      "id": "choose-intervention",
+      "type": "decision",
+      "targetId": "annex-intervention-console",
+      "text": "Choose a safe intervention",
+      "choices": [
+        {
+          "id": "restart-app-tier",
+          "outcomeId": "temporary-relief"
+        },
+        {
+          "id": "increase-pool",
+          "outcomeId": "unsafe-worsening"
+        },
+        {
+          "id": "rollback-and-drain",
+          "requiresEvidence": [
+            "EV-TELEM-001",
+            "EV-TELEM-002",
+            "EV-DEPLOY-001"
+          ],
+          "outcomeId": "safe-resolution"
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EV-SYMPTOM-001",
+      "category": "symptom",
+      "summary": "Signals and kiosks failed together."
+    },
+    {
+      "id": "EV-TELEM-001",
+      "category": "telemetry",
+      "summary": "Connection count is near maximum."
+    },
+    {
+      "id": "EV-TELEM-002",
+      "category": "telemetry",
+      "summary": "Errors rose after a configuration change."
+    },
+    {
+      "id": "EV-DEPLOY-001",
+      "category": "deployment",
+      "summary": "A timeout configuration was recently deployed."
+    }
+  ],
+  "worldStates": {
+    "incident": [
+      "signals.faulted",
+      "kiosks.offline",
+      "pedestrians.crossing_blocked",
+      "signs.flicker"
+    ],
+    "recovered": [
+      "signals.normal",
+      "kiosks.online",
+      "pedestrians.crossing_restored",
+      "signs.lit",
+      "project_garden.section_1_open"
+    ]
+  }
+}
