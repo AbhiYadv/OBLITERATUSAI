@@ -10,6 +10,7 @@ dist/
 .impeccable/
 reports/
 assets-source/
+OBLITERATUSAIV2.zip
 
 npm-debug.log*
 yarn-debug.log*

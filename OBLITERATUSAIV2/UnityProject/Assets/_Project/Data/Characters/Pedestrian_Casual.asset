@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b5f9a8372df0469bb9869277786e22b, type: 3}
+  m_Name: Pedestrian_Casual
+  m_EditorClassIdentifier: 
+  pedestrianPrefab: {fileID: 8748994388211553087, guid: c8484912e8d7d4950b41935d0fd2ce09, type: 3}
+  minSpeed: 1.1
+  maxSpeed: 1.7
+  clipNaturalSpeed: 1.55
+  hiVisTint: {r: 1, g: 0.839, b: 0.431, a: 1}
+  hiVisEvery: 3
+  minIdleInterval: 7
+  maxIdleInterval: 16
+  minIdleDuration: 1.4
+  maxIdleDuration: 3.8
+  idleChance: 0.72
+  crosswalkChance: 0.48
+  crossingSpeed: 2.35
+  vehicleHurryMultiplier: 1.35

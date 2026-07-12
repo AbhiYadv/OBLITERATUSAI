@@ -1,0 +1,34 @@
+# Unity-generated directories
+UnityProject/[Ll]ibrary/
+UnityProject/[Tt]emp/
+UnityProject/[Oo]bj/
+UnityProject/[Bb]uild/
+UnityProject/[Bb]uilds/
+UnityProject/[Ll]ogs/
+UnityProject/[Uu]ser[Ss]ettings/
+UnityProject/[Mm]emoryCaptures/
+UnityProject/[Rr]ecordings/
+
+# Unity/IDE-generated files
+UnityProject/*.csproj
+UnityProject/*.sln
+UnityProject/*.slnx
+UnityProject/*.user
+UnityProject/*.pidb
+UnityProject/*.booproj
+UnityProject/*.svd
+UnityProject/*.pdb
+UnityProject/*.mdb
+UnityProject/*.opendb
+UnityProject/*.VC.db
+UnityProject/.vs/
+UnityProject/.vscode/
+
+# Crash reports and local diagnostics
+UnityProject/sysinfo.txt
+UnityProject/mono_crash.*
+
+# OS and IDE metadata
+.DS_Store
+.vscode/
+.idea/

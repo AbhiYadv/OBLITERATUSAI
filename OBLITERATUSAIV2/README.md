@@ -31,3 +31,25 @@ The art direction should be:
 
 Aim for about 300 MB runtime memory in built player tests.
 
+## Unity Structure
+
+After creating the Unity project in Unity Hub, use the canonical folder structure in `UNITY_FOLDER_STRUCTURE.md`.
+
+Run:
+
+```bash
+./scripts/scaffold-unity-folders.sh ./UnityProject
+```
+
+## Project Guardrail
+
+Before major design, code, asset, or architecture decisions, read `GUARDRAIL.md`.
+
+## Project Records
+
+- `DEVELOPMENT_LOG.md` records completed work, controls, verification state, and known limitations.
+- `BUILD_PLAN.md` defines milestone order and current progress.
+- `TECHNICAL_DECISIONS.md` records agreed technology choices.
+- `PERFORMANCE_BUDGET.md` defines measurable runtime limits.
+- `INITIAL_GAMEPLAY_REVIEW.md` compares the current city with GTA-style open-world design and ranks the next gameplay improvements.
+- `LEGACY_FEATURE_PARITY.md` tracks which old-project capabilities were restored, replaced, or deliberately deferred.
