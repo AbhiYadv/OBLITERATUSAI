@@ -18,11 +18,20 @@ namespace ObliteratusAI.EditorTools
     {
         private const string CarSourcePath = "Assets/ThirdParty/LegacyProject/Vehicles/lowpoly-cars.glb";
         private const string TruckSourcePath = "Assets/ThirdParty/LegacyProject/Vehicles/truck.glb";
+        internal const string KenneyModelFolder = "Assets/ThirdParty/Kenney/CarKit/Models";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Vehicles";
         private const string DataFolder = "Assets/_Project/Data/Vehicles";
         private const float CarLength = 4.3f;
-        private const float TruckLength = 8.8f;
+        // Spacing length for trucks; the Kenney delivery truck is stubbier
+        // than the legacy articulated truck, so 8.8 m gaps read as a bug.
+        private const float TruckLength = 6.5f;
         private const float PodLength = 4.6f;
+        // The Kenney kit is toy-proportioned (cars nearly as wide as long),
+        // so its visuals are normalized to the definitions' collision width
+        // instead of the legacy target length. Length-normalizing would
+        // produce 3.4 m wide cars that visually clip oncoming traffic.
+        private const float CarWidth = 2.04f;
+        private const float TruckWidth = 2.5f;
 
         private static readonly Regex WheelPattern =
             new Regex("whe+l|tyre|tire", RegexOptions.IgnoreCase);
@@ -47,16 +56,20 @@ namespace ObliteratusAI.EditorTools
             EditorBuildUtility.EnsureFolder(PrefabFolder);
             EditorBuildUtility.EnsureFolder(DataFolder);
 
-            // The GLB models face -Z after long-axis normalization (observed
-            // in play testing: cars drove backwards), so their forward is
-            // flipped 180 degrees here. The primitive pod is authored facing
-            // +Z and needs no flip. Toggle per-source if a model is replaced.
-            GameObject car2Visual = BuildGlbVisual(
-                CarSourcePath, "car2", $"{PrefabFolder}/TrafficCar2Visual.prefab", CarLength, true, true);
-            GameObject car9Visual = BuildGlbVisual(
-                CarSourcePath, "car9", $"{PrefabFolder}/TrafficCar9Visual.prefab", CarLength, true, true);
-            GameObject truckVisual = BuildGlbVisual(
-                TruckSourcePath, null, $"{PrefabFolder}/TrafficTruckVisual.prefab", TruckLength, false, true);
+            // Preferred visuals are Kenney Car Kit models (authored facing
+            // +Z, named wheel-* nodes). The legacy GLBs remain the fallback
+            // when the kit is not imported; those face -Z after long-axis
+            // normalization (observed in play testing: cars drove backwards),
+            // so only the fallback path flips forward 180 degrees.
+            GameObject car2Visual = BuildCarVisual(
+                "suv.glb", CarSourcePath, "car2",
+                $"{PrefabFolder}/TrafficCar2Visual.prefab", CarLength, CarWidth, true);
+            GameObject car9Visual = BuildCarVisual(
+                "hatchback-sports.glb", CarSourcePath, "car9",
+                $"{PrefabFolder}/TrafficCar9Visual.prefab", CarLength, CarWidth, true);
+            GameObject truckVisual = BuildCarVisual(
+                "delivery.glb", TruckSourcePath, null,
+                $"{PrefabFolder}/TrafficTruckVisual.prefab", TruckLength, TruckWidth, false);
             GameObject podVisual = BuildPodVisual($"{PrefabFolder}/ShuttlePodVisual.prefab");
 
             Result result;
@@ -94,8 +107,38 @@ namespace ObliteratusAI.EditorTools
         }
 
         /// <summary>
+        /// Kenney model when imported, otherwise the legacy GLB fallback.
+        /// `legacySpinWheels` mirrors the old per-source choice (the legacy
+        /// truck has no usable wheel nodes).
+        /// </summary>
+        private static GameObject BuildCarVisual(
+            string kenneyFile,
+            string legacySourcePath,
+            string legacyNodeName,
+            string prefabPath,
+            float targetLength,
+            float targetWidth,
+            bool legacySpinWheels)
+        {
+            string kenneyPath = $"{KenneyModelFolder}/{kenneyFile}";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(kenneyPath) != null)
+            {
+                return BuildGlbVisual(
+                    kenneyPath, null, prefabPath, targetLength, true, false, targetWidth);
+            }
+            return BuildGlbVisual(
+                prefabPath: prefabPath,
+                sourcePath: legacySourcePath,
+                nodeName: legacyNodeName,
+                targetLength: targetLength,
+                spinWheels: legacySpinWheels,
+                flipForward: true);
+        }
+
+        /// <summary>
         /// Bake a GLB (or one named node of it) into a normalized wrapper
-        /// prefab: long axis along +Z, ground at y=0, scaled to targetLength.
+        /// prefab: long axis along +Z, ground at y=0. Scaled to targetWidth
+        /// (short horizontal axis) when given, otherwise to targetLength.
         /// </summary>
         private static GameObject BuildGlbVisual(
             string sourcePath,
@@ -103,7 +146,8 @@ namespace ObliteratusAI.EditorTools
             string prefabPath,
             float targetLength,
             bool spinWheels,
-            bool flipForward)
+            bool flipForward,
+            float targetWidth = 0f)
         {
             GameObject sourceAsset = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
             if (sourceAsset == null)
@@ -156,7 +200,9 @@ namespace ObliteratusAI.EditorTools
                 rotY += 180f;
             }
             holder.localRotation = Quaternion.Euler(0f, rotY, 0f);
-            float scale = targetLength / Mathf.Max(bounds.size.x, bounds.size.z);
+            float scale = targetWidth > 0f
+                ? targetWidth / Mathf.Min(bounds.size.x, bounds.size.z)
+                : targetLength / Mathf.Max(bounds.size.x, bounds.size.z);
             holder.localScale = Vector3.one * scale;
             if (EditorBuildUtility.TryGetCombinedBounds(wrapper, out bounds))
             {

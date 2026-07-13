@@ -91,7 +91,7 @@ namespace ObliteratusAI.Pedestrians
                 }
 
                 float speed = _populationRandom.Range(definition.MinSpeed, definition.MaxSpeed);
-                GameObject pedestrian = Instantiate(definition.PedestrianPrefab, transform);
+                GameObject pedestrian = Instantiate(definition.GetPrefab(i), transform);
                 pedestrian.name = $"Pedestrian_{i}";
                 pedestrian.layer = pedestrianLayer;
 

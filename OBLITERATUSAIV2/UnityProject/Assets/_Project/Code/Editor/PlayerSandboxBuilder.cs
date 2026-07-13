@@ -21,6 +21,12 @@ namespace ObliteratusAI.EditorTools
     {
         private const string ScenePath = "Assets/_Project/Scenes/Test/PlayerSandbox.unity";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Characters/PrototypePlayer.prefab";
+        // Exclusive player skin: Suit_Male is reserved for the player and is
+        // deliberately absent from the pedestrian variant roster.
+        private const string PlayerCharacterModelPath =
+            "Assets/ThirdParty/Quaternius/UltimateAnimatedCharacters/Models/Suit_Male.gltf";
+        private const string PlayerCharacterControllerPath =
+            "Assets/_Project/Art/Characters/Player_SuitMale.controller";
         private const string CharacterModelPath = "Assets/ThirdParty/Khronos/CesiumMan/human-casual.glb";
         private const string CharacterControllerPath = "Assets/_Project/Art/Characters/CesiumMan.controller";
         private const string VehicleDefinitionPath = "Assets/_Project/Data/Vehicles/PrototypeSedan.asset";
@@ -169,11 +175,17 @@ namespace ObliteratusAI.EditorTools
         private static void AttachCharacterVisual(GameObject player, Material fallbackMaterial)
         {
             Renderer capsuleRenderer = player.GetComponent<Renderer>();
-            GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(CharacterModelPath);
+            string modelPath = PlayerCharacterModelPath;
+            GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            if (modelAsset == null)
+            {
+                modelPath = CharacterModelPath;
+                modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            }
             if (modelAsset == null)
             {
                 capsuleRenderer.sharedMaterial = fallbackMaterial;
-                Debug.LogWarning($"Character model is not imported yet; using capsule visual: {CharacterModelPath}");
+                Debug.LogWarning($"Character model is not imported yet; using capsule visual: {modelPath}");
                 return;
             }
 
@@ -209,34 +221,59 @@ namespace ObliteratusAI.EditorTools
             }
 
             capsuleRenderer.enabled = false;
-            ConfigureCharacterAnimation(player, visual);
+            ConfigureCharacterAnimation(player, visual, modelPath);
         }
 
-        private static void ConfigureCharacterAnimation(GameObject player, GameObject visual)
+        private static void ConfigureCharacterAnimation(
+            GameObject player,
+            GameObject visual,
+            string modelPath)
         {
             Animator animator = visual.GetComponentInChildren<Animator>(true);
-            AnimationClip animationClip = AssetDatabase.LoadAllAssetsAtPath(CharacterModelPath)
-                .OfType<AnimationClip>()
-                .FirstOrDefault(clip => !clip.name.StartsWith("__preview__"));
-
-            if (animator == null || animationClip == null)
+            if (animator == null)
             {
-                Debug.LogWarning("Character rig or animation clip was not imported; movement animation is disabled.");
+                Debug.LogWarning("Character rig was not imported; movement animation is disabled.");
                 return;
             }
 
-            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(CharacterControllerPath);
+            AnimatorController controller;
+            if (modelPath == PlayerCharacterModelPath)
+            {
+                // Quaternius character: Idle/Walk controller from its own
+                // clip set.
+                controller = CharacterAnimationBuilder.EnsureController(
+                    PlayerCharacterControllerPath, modelPath);
+            }
+            else
+            {
+                // Legacy CesiumMan fallback: single looping walk clip.
+                AnimationClip animationClip = AssetDatabase.LoadAllAssetsAtPath(modelPath)
+                    .OfType<AnimationClip>()
+                    .FirstOrDefault(clip => !clip.name.StartsWith("__preview__"));
+                if (animationClip == null)
+                {
+                    Debug.LogWarning("Character animation clip was not imported; movement animation is disabled.");
+                    return;
+                }
+                controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(CharacterControllerPath);
+                if (controller == null)
+                {
+                    controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(
+                        CharacterControllerPath,
+                        animationClip);
+                }
+            }
+
             if (controller == null)
             {
-                controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(
-                    CharacterControllerPath,
-                    animationClip);
+                Debug.LogWarning("No animator controller could be built; movement animation is disabled.");
+                return;
             }
 
             animator.runtimeAnimatorController = controller;
             animator.applyRootMotion = false;
             player.AddComponent<PlayerAnimationDriver>().Configure(animator);
-            Debug.Log($"Character animation configured with clip '{animationClip.name}'.");
+            Debug.Log($"Character animation configured from '{modelPath}'.");
         }
 
         private static bool TryGetCombinedBounds(Renderer[] renderers, out Bounds bounds)
@@ -351,7 +388,26 @@ namespace ObliteratusAI.EditorTools
             vehicle.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
             BoxCollider vehicleCollider = vehicle.AddComponent<BoxCollider>();
             vehicleCollider.center = new Vector3(0f, 0.15f, 0f);
-            vehicleCollider.size = new Vector3(1.95f, 1.25f, 4.15f);
+            // Footprint follows the actual visual (the Kenney sedan is much
+            // shorter than the legacy 4.15 m box, which left an invisible
+            // bumper when parking). The tuned vertical center/height stay
+            // untouched: the controller's ride height depends on them.
+            Vector3 vehicleColliderSize = new Vector3(1.95f, 1.25f, 4.15f);
+            GameObject measureInstance = visualPrefab != null
+                ? PrefabUtility.InstantiatePrefab(visualPrefab) as GameObject
+                : null;
+            if (measureInstance != null)
+            {
+                if (EditorBuildUtility.TryGetCombinedBounds(measureInstance, out Bounds visualBounds)
+                    && visualBounds.size.x > 0.5f
+                    && visualBounds.size.z > 0.5f)
+                {
+                    vehicleColliderSize.x = visualBounds.size.x;
+                    vehicleColliderSize.z = visualBounds.size.z + 0.1f;
+                }
+                Object.DestroyImmediate(measureInstance);
+            }
+            vehicleCollider.size = vehicleColliderSize;
 
             Rigidbody vehicleBody = vehicle.AddComponent<Rigidbody>();
             vehicleBody.mass = definition.Mass;

@@ -41,16 +41,30 @@ namespace ObliteratusAI.EditorTools
                 GetOrCreateMaterial("M_StorefrontCyan", new Color(0.04f, 0.42f, 0.55f)),
                 GetOrCreateMaterial("M_StorefrontViolet", new Color(0.25f, 0.18f, 0.42f))
             };
+            CityVisualSet importedCityVisuals = QuaterniusCityAssetBuilder.EnsureAssets();
+
+            // Kit ground surfaces. World-scale UVs are baked into the slab
+            // meshes, so these materials keep 1:1 tiling and stay independent
+            // of the building modules' own UVs. If the kit textures are not
+            // imported the flat legacy materials remain the fallback.
+            Material kitAsphalt = QuaterniusCityAssetBuilder.EnsureLit(
+                "M_QC_RoadAsphalt", "T_Concrete_Asphalt_BaseColor.png", null, Color.white, 0.06f, 0f);
+            Material kitSidewalk = QuaterniusCityAssetBuilder.EnsureLit(
+                "M_QC_SidewalkConcrete", "T_Concrete_BaseColor.png", "T_Concrete_Normal.png",
+                Color.white, 0.10f, 0f);
+            Material roadSurface = kitAsphalt.GetTexture("_BaseMap") != null ? kitAsphalt : asphalt;
+            Material walkSurface = kitSidewalk.GetTexture("_BaseMap") != null ? kitSidewalk : concrete;
 
             GameObject root = new GameObject("LegacyCityPort");
-            CreateBase(root.transform, concrete, asphalt);
+            CreateBase(root.transform, walkSurface, roadSurface);
             LegacySurroundBuilder.Build(root.transform, LegacySurroundBuilder.DefaultSeed);
-            List<Vector4> blocks = CreateSidewalkBlocks(root.transform, concrete);
+            List<Vector4> blocks = CreateSidewalkBlocks(root.transform, walkSurface);
             CreateRoadPaint(root.transform, paint);
-            CreateBuildings(root.transform, blocks, facades, storefronts, roof, dark);
+            CreateManholes(root.transform, importedCityVisuals);
+            CreateBuildings(root.transform, blocks, facades, storefronts, roof, dark, importedCityVisuals);
             CreateStreetLights(root.transform, dark, paint);
             CreateConstructionSite(root.transform, concrete, dark);
-            CityLifeDetailBuilder.Build(root.transform, LegacySurroundBuilder.DefaultSeed);
+            CityLifeDetailBuilder.Build(root.transform, LegacySurroundBuilder.DefaultSeed, importedCityVisuals);
 
             GameObject carVisual = CreateLegacyCarVisualPrefab();
 
@@ -71,16 +85,40 @@ namespace ObliteratusAI.EditorTools
         {
             // The grass/water placeholder boxes are replaced by the baked
             // terrain surround (LegacySurroundBuilder).
-            CreateBox("CityFoundation", new Vector3(0f, -0.08f, 0f), new Vector3(310f, 0.16f, 310f), concrete, root);
+            GameObject foundation = CreateTexturedSlab(
+                "CityFoundation",
+                "Assets/_Project/Art/City/LegacyFoundationSlab.asset",
+                new Vector3(0f, 0f, 0f),
+                new Vector2(310f, 310f),
+                0f,
+                0.15f,
+                concrete,
+                root);
+            BoxCollider foundationCollider = foundation.AddComponent<BoxCollider>();
+            foundationCollider.center = new Vector3(0f, -0.08f, 0f);
+            foundationCollider.size = new Vector3(310f, 0.16f, 310f);
 
+            // Roads keep their exact legacy footprints and heights (the NS/EW
+            // 5 mm offset avoids z-fighting at intersections); only the flat
+            // color becomes the kit asphalt texture.
             foreach (float street in Streets)
             {
-                GameObject vertical = CreateBox($"Road_NS_{street}", new Vector3(street, 0.015f, 0f),
-                    new Vector3(RoadWidth, 0.03f, 300f), asphalt, root);
-                GameObject horizontal = CreateBox($"Road_EW_{street}", new Vector3(0f, 0.02f, street),
-                    new Vector3(300f, 0.03f, RoadWidth), asphalt, root);
-                UnityEngine.Object.DestroyImmediate(vertical.GetComponent<Collider>());
-                UnityEngine.Object.DestroyImmediate(horizontal.GetComponent<Collider>());
+                CreateTexturedSlab($"Road_NS_{street}",
+                    "Assets/_Project/Art/City/LegacyRoadSlabNS.asset",
+                    new Vector3(street, 0.03f, 0f),
+                    new Vector2(RoadWidth, 300f),
+                    0f,
+                    0.12f,
+                    asphalt,
+                    root);
+                CreateTexturedSlab($"Road_EW_{street}",
+                    "Assets/_Project/Art/City/LegacyRoadSlabEW.asset",
+                    new Vector3(0f, 0.035f, street),
+                    new Vector2(300f, RoadWidth),
+                    0f,
+                    0.12f,
+                    asphalt,
+                    root);
             }
         }
 
@@ -98,13 +136,171 @@ namespace ObliteratusAI.EditorTools
                     float minZ = Streets[z] + RoadWidth * 0.5f;
                     float maxZ = Streets[z + 1] - RoadWidth * 0.5f;
                     blocks.Add(new Vector4(minX, maxX, minZ, maxZ));
-                    CreateBox($"Block_{x}_{z}",
-                        new Vector3((minX + maxX) * 0.5f, SidewalkHeight * 0.5f, (minZ + maxZ) * 0.5f),
-                        new Vector3(maxX - minX, SidewalkHeight, maxZ - minZ), concrete, blockRoot);
+                    GameObject slab = CreateTexturedSlab($"Block_{x}_{z}",
+                        "Assets/_Project/Art/City/LegacyBlockSlab.asset",
+                        new Vector3((minX + maxX) * 0.5f, SidewalkHeight, (minZ + maxZ) * 0.5f),
+                        new Vector2(maxX - minX, maxZ - minZ),
+                        SidewalkHeight,
+                        0.25f,
+                        concrete,
+                        blockRoot);
+                    BoxCollider collider = slab.AddComponent<BoxCollider>();
+                    collider.center = new Vector3(0f, -SidewalkHeight * 0.5f, 0f);
+                    collider.size = new Vector3(maxX - minX, SidewalkHeight, maxZ - minZ);
                 }
             }
 
             return blocks;
+        }
+
+        /// <summary>
+        /// Flat slab with its top face at the object's y position, optional
+        /// curb sides hanging down, and UVs in meters so tiled surface
+        /// textures keep a constant density regardless of slab size. The
+        /// mesh is stored as a reusable asset; identical slabs share it.
+        /// </summary>
+        private static GameObject CreateTexturedSlab(
+            string name,
+            string meshAssetPath,
+            Vector3 topCenter,
+            Vector2 size,
+            float sideHeight,
+            float uvPerMeter,
+            Material material,
+            Transform parent)
+        {
+            Mesh mesh = BuildSlabMesh(size, sideHeight, uvPerMeter);
+            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(meshAssetPath);
+            if (existing == null)
+            {
+                AssetDatabase.CreateAsset(mesh, meshAssetPath);
+                existing = mesh;
+            }
+            else
+            {
+                EditorUtility.CopySerialized(mesh, existing);
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+
+            GameObject slab = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            slab.transform.SetParent(parent);
+            slab.transform.position = topCenter;
+            slab.GetComponent<MeshFilter>().sharedMesh = existing;
+            slab.GetComponent<MeshRenderer>().sharedMaterial = material;
+            return slab;
+        }
+
+        private static Mesh BuildSlabMesh(Vector2 size, float sideHeight, float uvPerMeter)
+        {
+            float halfX = size.x * 0.5f;
+            float halfZ = size.y * 0.5f;
+            List<Vector3> vertices = new List<Vector3>();
+            List<Vector3> normals = new List<Vector3>();
+            List<Vector2> uvs = new List<Vector2>();
+            List<int> triangles = new List<int>();
+
+            void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal,
+                Vector2 uvA, Vector2 uvB, Vector2 uvC, Vector2 uvD)
+            {
+                int start = vertices.Count;
+                vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
+                for (int i = 0; i < 4; i++)
+                {
+                    normals.Add(normal);
+                }
+                uvs.Add(uvA); uvs.Add(uvB); uvs.Add(uvC); uvs.Add(uvD);
+                triangles.Add(start); triangles.Add(start + 2); triangles.Add(start + 1);
+                triangles.Add(start); triangles.Add(start + 3); triangles.Add(start + 2);
+            }
+
+            AddQuad(
+                new Vector3(-halfX, 0f, -halfZ),
+                new Vector3(halfX, 0f, -halfZ),
+                new Vector3(halfX, 0f, halfZ),
+                new Vector3(-halfX, 0f, halfZ),
+                Vector3.up,
+                new Vector2(-halfX, -halfZ) * uvPerMeter,
+                new Vector2(halfX, -halfZ) * uvPerMeter,
+                new Vector2(halfX, halfZ) * uvPerMeter,
+                new Vector2(-halfX, halfZ) * uvPerMeter);
+
+            if (sideHeight > 0.001f)
+            {
+                float bottom = -sideHeight;
+                // South, North, West, East curb faces.
+                AddQuad(
+                    new Vector3(-halfX, bottom, -halfZ), new Vector3(halfX, bottom, -halfZ),
+                    new Vector3(halfX, 0f, -halfZ), new Vector3(-halfX, 0f, -halfZ),
+                    Vector3.back,
+                    new Vector2(-halfX, 0f) * uvPerMeter, new Vector2(halfX, 0f) * uvPerMeter,
+                    new Vector2(halfX, sideHeight) * uvPerMeter, new Vector2(-halfX, sideHeight) * uvPerMeter);
+                AddQuad(
+                    new Vector3(halfX, bottom, halfZ), new Vector3(-halfX, bottom, halfZ),
+                    new Vector3(-halfX, 0f, halfZ), new Vector3(halfX, 0f, halfZ),
+                    Vector3.forward,
+                    new Vector2(-halfX, 0f) * uvPerMeter, new Vector2(halfX, 0f) * uvPerMeter,
+                    new Vector2(halfX, sideHeight) * uvPerMeter, new Vector2(-halfX, sideHeight) * uvPerMeter);
+                AddQuad(
+                    new Vector3(-halfX, bottom, halfZ), new Vector3(-halfX, bottom, -halfZ),
+                    new Vector3(-halfX, 0f, -halfZ), new Vector3(-halfX, 0f, halfZ),
+                    Vector3.left,
+                    new Vector2(-halfZ, 0f) * uvPerMeter, new Vector2(halfZ, 0f) * uvPerMeter,
+                    new Vector2(halfZ, sideHeight) * uvPerMeter, new Vector2(-halfZ, sideHeight) * uvPerMeter);
+                AddQuad(
+                    new Vector3(halfX, bottom, -halfZ), new Vector3(halfX, bottom, halfZ),
+                    new Vector3(halfX, 0f, halfZ), new Vector3(halfX, 0f, -halfZ),
+                    Vector3.right,
+                    new Vector2(-halfZ, 0f) * uvPerMeter, new Vector2(halfZ, 0f) * uvPerMeter,
+                    new Vector2(halfZ, sideHeight) * uvPerMeter, new Vector2(-halfZ, sideHeight) * uvPerMeter);
+            }
+
+            Mesh mesh = new Mesh { name = "LegacySlab" };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static void CreateManholes(Transform root, CityVisualSet visualSet)
+        {
+            GameObject prefab = visualSet != null ? visualSet.ManholePrefab : null;
+            if (prefab == null)
+            {
+                return;
+            }
+
+            Transform parent = new GameObject("Manholes").transform;
+            parent.SetParent(root);
+            int index = 0;
+            foreach (float street in Streets)
+            {
+                for (float along = -138f; along <= 138f; along += 31f)
+                {
+                    if (NearStreet(along, 12f))
+                    {
+                        continue;
+                    }
+
+                    float lane = index++ % 2 == 0 ? 1.5f : -1.5f;
+                    // NS road tops sit at 0.03, EW at 0.035; the cover base is
+                    // authored at -0.014, so these heights rest it on asphalt.
+                    GameObject onVertical = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
+                    if (onVertical != null)
+                    {
+                        onVertical.name = "Manhole";
+                        onVertical.transform.position = new Vector3(street + lane, 0.045f, along);
+                    }
+
+                    GameObject onHorizontal = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
+                    if (onHorizontal != null)
+                    {
+                        onHorizontal.name = "Manhole";
+                        onHorizontal.transform.position = new Vector3(along, 0.05f, street + lane);
+                    }
+                }
+            }
         }
 
         private static void CreateRoadPaint(Transform root, Material paint)
@@ -195,7 +391,8 @@ namespace ObliteratusAI.EditorTools
             Material[] facades,
             Material[] storefronts,
             Material roof,
-            Material dark)
+            Material dark,
+            CityVisualSet importedCityVisuals)
         {
             Transform buildingRoot = new GameObject("Buildings").transform;
             buildingRoot.SetParent(root);
@@ -244,9 +441,150 @@ namespace ObliteratusAI.EditorTools
                         ? 3
                         : random.Next(0, 3);
 
-                    CreateBuilding(buildingRoot, buildingIndex++, x, z, width, depth, height,
-                        facades[variant], storefronts[random.Next(storefronts.Length)], roof, dark, random);
+                    Material storefront = storefronts[random.Next(storefronts.Length)];
+                    // Every lot, towers included, now uses kit art. The
+                    // procedural facade boxes remain only as the fallback
+                    // when the kit is not imported.
+                    bool imported = TryCreateImportedBuilding(
+                        buildingRoot,
+                        buildingIndex,
+                        x,
+                        z,
+                        width,
+                        depth,
+                        height,
+                        importedCityVisuals);
+
+                    if (imported)
+                    {
+                        ConsumeLegacyRooftopRandom(height, random);
+                    }
+                    else
+                    {
+                        CreateBuilding(buildingRoot, buildingIndex, x, z, width, depth, height,
+                            facades[variant], storefront, roof, dark, random);
+                    }
+                    buildingIndex++;
                 }
+            }
+        }
+
+        private static bool TryCreateImportedBuilding(
+            Transform parent,
+            int index,
+            float x,
+            float z,
+            float width,
+            float depth,
+            float requestedHeight,
+            CityVisualSet visualSet)
+        {
+            if (visualSet == null
+                || !visualSet.TryGetClosestBuilding(requestedHeight, width, depth, index, out GameObject prefab)
+                || prefab == null)
+            {
+                return false;
+            }
+
+            GameObject building = new GameObject($"Building_{index}_Quaternius");
+            building.transform.SetParent(parent);
+            building.transform.position = new Vector3(x, SidewalkHeight, z);
+
+            GameObject visual = PrefabUtility.InstantiatePrefab(prefab, building.transform) as GameObject;
+            if (visual == null || !EditorBuildUtility.TryGetCombinedBounds(visual, out Bounds bounds))
+            {
+                UnityEngine.Object.DestroyImmediate(building);
+                return false;
+            }
+
+            visual.name = "Visual";
+            // These complete models have street facades on local +X and +Z,
+            // with party walls on -X and -Z. Rotate each lot so both detailed
+            // sides face its two nearest streets and the blank sides face the
+            // block interior.
+            float xDirection = NearestStreetDirection(x);
+            float zDirection = NearestStreetDirection(z);
+            float yaw;
+            if (xDirection > 0f && zDirection > 0f)
+            {
+                yaw = 0f;
+            }
+            else if (xDirection > 0f)
+            {
+                yaw = 90f;
+            }
+            else if (zDirection > 0f)
+            {
+                yaw = -90f;
+            }
+            else
+            {
+                yaw = 180f;
+            }
+            visual.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            if (!EditorBuildUtility.TryGetCombinedBounds(visual, out bounds)
+                || bounds.size.x < 0.01f
+                || bounds.size.y < 0.01f
+                || bounds.size.z < 0.01f)
+            {
+                UnityEngine.Object.DestroyImmediate(building);
+                return false;
+            }
+
+            float footprintScale = Mathf.Min(
+                width * 0.94f / bounds.size.x,
+                depth * 0.94f / bounds.size.z);
+            // Preserve the authored proportions and form a dense street wall.
+            // Shrinking to the old box height exposes the pack's party walls
+            // across large gaps and defeats the purpose of the detailed mesh.
+            float scale = footprintScale;
+            if (float.IsNaN(scale) || float.IsInfinity(scale) || scale <= 0.01f)
+            {
+                UnityEngine.Object.DestroyImmediate(building);
+                return false;
+            }
+
+            visual.transform.localScale = Vector3.one * scale;
+            if (!EditorBuildUtility.TryGetCombinedBounds(visual, out bounds))
+            {
+                UnityEngine.Object.DestroyImmediate(building);
+                return false;
+            }
+
+            visual.transform.position += new Vector3(
+                x - bounds.center.x,
+                SidewalkHeight - bounds.min.y,
+                z - bounds.center.z);
+
+            // Modular prefabs carry an exact wall-plane collider (scaled with
+            // the visual); only the complete kit models still need the
+            // approximate render-bounds box.
+            if (visual.GetComponentInChildren<Collider>(true) == null)
+            {
+                EditorBuildUtility.TryGetCombinedBounds(visual, out bounds);
+                BoxCollider collider = building.AddComponent<BoxCollider>();
+                collider.center = building.transform.InverseTransformPoint(bounds.center);
+                collider.size = new Vector3(
+                    bounds.size.x * 0.90f,
+                    bounds.size.y,
+                    bounds.size.z * 0.90f);
+            }
+            return true;
+        }
+
+        private static void ConsumeLegacyRooftopRandom(float height, System.Random random)
+        {
+            if (height <= 20f)
+            {
+                return;
+            }
+
+            int unitCount = 1 + random.Next(0, 2);
+            for (int i = 0; i < unitCount; i++)
+            {
+                NextFloat(random);
+                NextFloat(random);
             }
         }
 
@@ -415,6 +753,39 @@ namespace ObliteratusAI.EditorTools
 
         private static GameObject CreateLegacyCarVisualPrefab()
         {
+            // Preferred player car: the Kenney Car Kit sedan (faces +Z, so no
+            // flip). Normalized to the sedan collider's 1.95 m width — the
+            // kit's toy proportions would exceed the lane width if the
+            // legacy 4.3 m length normalization were applied.
+            GameObject kenneySedan = AssetDatabase.LoadAssetAtPath<GameObject>(
+                $"{TrafficAssetBuilder.KenneyModelFolder}/sedan.glb");
+            if (kenneySedan != null)
+            {
+                GameObject sedanInstance = PrefabUtility.InstantiatePrefab(kenneySedan) as GameObject;
+                if (sedanInstance != null)
+                {
+                    GameObject sedanWrapper = new GameObject("LegacyCar9Visual");
+                    sedanInstance.transform.SetParent(sedanWrapper.transform, false);
+                    if (TryGetBounds(sedanInstance, out Bounds sedanBounds)
+                        && sedanBounds.size.x > 0.01f
+                        && sedanBounds.size.z > 0.01f)
+                    {
+                        float sedanScale = 1.95f / Mathf.Min(sedanBounds.size.x, sedanBounds.size.z);
+                        sedanInstance.transform.localScale = Vector3.one * sedanScale;
+                        if (TryGetBounds(sedanInstance, out sedanBounds))
+                        {
+                            sedanInstance.transform.position += new Vector3(
+                                -sedanBounds.center.x, -sedanBounds.min.y, -sedanBounds.center.z);
+                        }
+                        GameObject sedanPrefab =
+                            PrefabUtility.SaveAsPrefabAsset(sedanWrapper, LegacyCarVisualPrefab);
+                        UnityEngine.Object.DestroyImmediate(sedanWrapper);
+                        return sedanPrefab;
+                    }
+                    UnityEngine.Object.DestroyImmediate(sedanWrapper);
+                }
+            }
+
             GameObject sourceAsset = AssetDatabase.LoadAssetAtPath<GameObject>(LegacyCarSource);
             if (sourceAsset == null)
             {
@@ -740,7 +1111,28 @@ namespace ObliteratusAI.EditorTools
             {
                 // Wind foliage deforms in object space and uses GPU instancing;
                 // static batching would bake away the per-tree transform.
-                child.gameObject.isStatic = child.name != "Foliage";
+                if (child.name == "Foliage")
+                {
+                    child.gameObject.isStatic = false;
+                    continue;
+                }
+
+                // The baked kit buildings are already one combined mesh each.
+                // Feeding them to static batching duplicates their large
+                // vertex buffers into batch storage and tanks the frame rate,
+                // so they keep every static flag except batching.
+                MeshFilter filter = child.GetComponent<MeshFilter>();
+                if (filter != null
+                    && filter.sharedMesh != null
+                    && filter.sharedMesh.vertexCount > 32000)
+                {
+                    GameObjectUtility.SetStaticEditorFlags(
+                        child.gameObject,
+                        (StaticEditorFlags)~0 & ~StaticEditorFlags.BatchingStatic);
+                    continue;
+                }
+
+                child.gameObject.isStatic = true;
             }
         }
 

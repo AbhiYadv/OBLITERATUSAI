@@ -142,3 +142,26 @@ Use one directional `WindZone`, one global controller, and a shared URP vertex-w
 Reason: Unity's [Wind Zone documentation](https://docs.unity3d.com/6000.0/Documentation/Manual/class-WindZone.html) models natural wind with main force, turbulence, and pulses. The project's trees are ordinary procedural prefab meshes, not Terrain or SpeedTree assets, so the controller bridges those values into a project-owned shader.
 
 Animate foliage vertices on the GPU with world-position phase variation. Keep trunks and branches static, keep sway subtle, and enable material instancing. Do not add an Animator or per-tree behavior component to hundreds of trees.
+
+## Third-Party City Visuals
+
+Use third-party city art through project-owned prefab wrappers and a
+`CityVisualSet` catalog. Keep the canonical `CityLayout`, procedural fallback,
+and simple generated collision independent from any imported model pack.
+
+Reason: traffic lanes, signal stop lines, pedestrian loops, garage access, and
+crosswalks all depend on the existing 11 m road grid. Replacing a demonstration
+scene or road mesh directly would make the visuals disagree with gameplay.
+Visual catalogs allow individual models or complete art sets to be changed
+without rewriting simulation code.
+
+The first catalog uses the free CC0 Standard edition of Quaternius' Downtown
+City MegaKit. Raw assets stay isolated under `Assets/ThirdParty`; textures are
+capped at 1024 px; project-owned URP materials, wrappers, colliders, and data
+assets stay under `Assets/_Project`.
+
+Use only models whose authored frontage matches their placement type. Infill
+buildings with blank party walls require contiguous authored rows. Automatic
+corner lots require two visible street facades. Imported roads and sidewalks
+remain inactive until an adapter proves exact route, curb, crossing, and
+collider alignment.

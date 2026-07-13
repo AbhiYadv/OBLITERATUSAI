@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dee15e0d060d84c4d94f570263131437, type: 3}
+  m_Name: QuaterniusDowntownVisualSet
+  m_EditorClassIdentifier: 
+  sourceName: Quaternius Downtown City MegaKit Standard (CC0)
+  buildingVariants:
+  - id: Small
+    prefab: {fileID: 7433812151264842927, guid: 5a14ea37fd21640b4914066fa38e1687, type: 3}
+    preferredHeight: 17.02597
+    preferredWidth: 12.460001
+    preferredDepth: 14.536007
+    supportsCornerPlacement: 0
+  - id: Medium
+    prefab: {fileID: 2621154704786177862, guid: dbd974e348d064cb3a990378c96e9b85, type: 3}
+    preferredHeight: 25.008657
+    preferredWidth: 15.055682
+    preferredDepth: 13.055681
+    supportsCornerPlacement: 0
+  - id: Large
+    prefab: {fileID: 5622212983050169395, guid: 30c6cbffb2a614c439113969d394354e, type: 3}
+    preferredHeight: 28.000038
+    preferredWidth: 20.64411
+    preferredDepth: 16.644596
+    supportsCornerPlacement: 1
+  - id: Brick_S
+    prefab: {fileID: 108471368467549864, guid: af55e6b4fdfd14c328f3f3c05afa8bf9, type: 3}
+    preferredHeight: 13.179529
+    preferredWidth: 22
+    preferredDepth: 22
+    supportsCornerPlacement: 1
+  - id: Brick_M
+    prefab: {fileID: 4822973248839158060, guid: 9a75198f33c134eed903af0b869a6beb, type: 3}
+    preferredHeight: 19.17953
+    preferredWidth: 22
+    preferredDepth: 26
+    supportsCornerPlacement: 1
+  - id: Brick_L
+    prefab: {fileID: 5364901262129740475, guid: 1e160565f9e8f478bb6a66fdd2d97258, type: 3}
+    preferredHeight: 25.17953
+    preferredWidth: 26
+    preferredDepth: 26
+    supportsCornerPlacement: 1
+  - id: Brick_T
+    prefab: {fileID: 7887079001891417586, guid: 6108d9163d95a4d309b36aa77e7c9f25, type: 3}
+    preferredHeight: 31.17953
+    preferredWidth: 26
+    preferredDepth: 26
+    supportsCornerPlacement: 1
+  - id: Trim_S
+    prefab: {fileID: 2797718459641200711, guid: 595866a4e20e34f85bbe7acb1ecb5b11, type: 3}
+    preferredHeight: 16.189804
+    preferredWidth: 22
+    preferredDepth: 22
+    supportsCornerPlacement: 1
+  - id: Trim_M
+    prefab: {fileID: 3711070566611833423, guid: 17451adfce7844b16b95328a833401f4, type: 3}
+    preferredHeight: 22.189804
+    preferredWidth: 26
+    preferredDepth: 22
+    supportsCornerPlacement: 1
+  - id: Metal_M
+    prefab: {fileID: 7929391323177305583, guid: 4634951f560464af089f8db49f5141b5, type: 3}
+    preferredHeight: 28.17953
+    preferredWidth: 22
+    preferredDepth: 22
+    supportsCornerPlacement: 1
+  - id: Metal_L
+    prefab: {fileID: 8442351700839474465, guid: ecf787bd222b7440097e0bb3df7be25a, type: 3}
+    preferredHeight: 37.179527
+    preferredWidth: 26
+    preferredDepth: 26
+    supportsCornerPlacement: 1
+  - id: Metal_T1
+    prefab: {fileID: 8782042809767642141, guid: b1e228edd39174dadbe193231d1009e6, type: 3}
+    preferredHeight: 55.179527
+    preferredWidth: 30
+    preferredDepth: 30
+    supportsCornerPlacement: 1
+  - id: Metal_T2
+    prefab: {fileID: 760673110426332636, guid: 18004fef4dba34e02960b19274b46025, type: 3}
+    preferredHeight: 73.17953
+    preferredWidth: 34
+    preferredDepth: 34
+    supportsCornerPlacement: 1
+  bollardPrefab: {fileID: 6411208678114116592, guid: 6008c5414f9f34ca98a4609743f3458e, type: 3}
+  planterPrefab: {fileID: 752828390943242359, guid: ddaf020ba654e4ec8b516673ce101a89, type: 3}
+  manholePrefab: {fileID: 9077923511450257325, guid: dd9fc88daa95848459ae8bc162faa151, type: 3}
+  acUnitPrefab: {fileID: 1639201084948486622, guid: 60a9d983ef2ab484bba401b10c2fbf93, type: 3}

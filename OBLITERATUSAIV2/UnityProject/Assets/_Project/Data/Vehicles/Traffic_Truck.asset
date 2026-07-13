@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Traffic_Truck
   m_EditorClassIdentifier: 
   visualPrefab: {fileID: 4579474655224400170, guid: 829a6ebe5d7b8426d8cb68bc4326a05f, type: 3}
-  length: 8.8
+  length: 6.5
   halfWidth: 1.25
   halfHeight: 1.45
   minCruiseSpeed: 6.5

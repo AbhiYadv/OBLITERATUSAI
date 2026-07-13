@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ObliteratusAI.City;
 using ObliteratusAI.Core;
+using ObliteratusAI.Interactions;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,9 +17,9 @@ namespace ObliteratusAI.EditorTools
     {
         private const float SlabTop = CityLayout.SlabTop;
 
-        public static void Build(Transform root, int seed)
+        public static void Build(Transform root, int seed, CityVisualSet visuals = null)
         {
-            BuildStreetFurniture(root, seed);
+            BuildStreetFurniture(root, seed, visuals);
             BuildBillboards(root);
             BuildParkedCars(root, seed);
         }
@@ -29,10 +30,12 @@ namespace ObliteratusAI.EditorTools
         // with crossing bollards near the corners. (The legacy per-blade
         // grass verge is cut — thousands of blades don't suit baked objects.)
         // ------------------------------------------------------------------
-        private static void BuildStreetFurniture(Transform root, int seed)
+        private static void BuildStreetFurniture(Transform root, int seed, CityVisualSet visuals)
         {
             Transform parent = new GameObject("SidewalkFurniture").transform;
             parent.SetParent(root, false);
+            GameObject bollardPrefab = visuals != null ? visuals.BollardPrefab : null;
+            GameObject planterPrefab = visuals != null ? visuals.PlanterPrefab : null;
 
             Material planter = EditorBuildUtility.GetOrCreateMaterial(
                 "M_Planter", new Color(0.42f, 0.384f, 0.353f), 0.1f);
@@ -66,7 +69,7 @@ namespace ObliteratusAI.EditorTools
                 {
                     FillEdge(parent, ref rand, edge.ax, edge.az, edge.bx, edge.bz,
                         planter, benchWood, benchLeg, bin, bollard, umbrellaPole, umbrella,
-                        treePrefabs, ref treeIndex);
+                        treePrefabs, ref treeIndex, bollardPrefab, planterPrefab);
                 }
             }
         }
@@ -77,7 +80,8 @@ namespace ObliteratusAI.EditorTools
             float ax, float az, float bx, float bz,
             Material planter, Material benchWood, Material benchLeg, Material bin,
             Material bollard, Material umbrellaPole, Material umbrella,
-            GameObject[] treePrefabs, ref int treeIndex)
+            GameObject[] treePrefabs, ref int treeIndex,
+            GameObject bollardPrefab, GameObject planterPrefab)
         {
             float len = Mathf.Sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az));
             float dx = (bx - ax) / len;
@@ -112,17 +116,24 @@ namespace ObliteratusAI.EditorTools
                     float treeRotation = rand.NextFloat() * 360f;
                     float scale = 0.55f + rand.NextFloat() * 0.2f;
                     CreateStreetTree(parent, new Vector3(px, SlabTop, pz), treeRotation, scale,
-                        treePrefabs[treeIndex++ % treePrefabs.Length], planter);
+                        treePrefabs[treeIndex++ % treePrefabs.Length], planter, planterPrefab);
                 }
             }
 
-            // Crossing bollards near both corners.
-            foreach (float s in new[] { 2f, 3.6f, 5.2f })
+            // Crossing bollards near both corners. Crosswalk corridors enter
+            // the sidewalk 1.9 m from the perpendicular edge (the pedestrian
+            // loop inset), so the row starts at 3.0 m to keep the capsule
+            // (0.34 m) plus bollard (0.16 m) clear of every crossing line —
+            // at the legacy 2.0 m start, pedestrians walked straight through
+            // the first bollard when entering or leaving a crosswalk.
+            foreach (float s in new[] { 3.0f, 4.4f, 5.8f })
             {
                 CreateBollard(parent,
-                    new Vector3(ax + dx * s + inX * 0.55f, SlabTop, az + dz * s + inZ * 0.55f), bollard);
+                    new Vector3(ax + dx * s + inX * 0.55f, SlabTop, az + dz * s + inZ * 0.55f),
+                    bollard, bollardPrefab);
                 CreateBollard(parent,
-                    new Vector3(bx - dx * s + inX * 0.55f, SlabTop, bz - dz * s + inZ * 0.55f), bollard);
+                    new Vector3(bx - dx * s + inX * 0.55f, SlabTop, bz - dz * s + inZ * 0.55f),
+                    bollard, bollardPrefab);
             }
 
             // Occasional cafe umbrella.
@@ -137,7 +148,7 @@ namespace ObliteratusAI.EditorTools
 
         private static void CreateStreetTree(
             Transform parent, Vector3 position, float rotation, float scale,
-            GameObject treePrefab, Material planterMaterial)
+            GameObject treePrefab, Material planterMaterial, GameObject planterPrefab)
         {
             GameObject item = new GameObject("StreetTree");
             item.transform.SetParent(parent, false);
@@ -149,6 +160,25 @@ namespace ObliteratusAI.EditorTools
                 tree.transform.localRotation = Quaternion.Euler(0f, rotation, 0f);
                 tree.transform.localScale = Vector3.one * scale;
             }
+
+            if (planterPrefab != null)
+            {
+                // Kit planter is authored 2x2 m; 0.65 matches the legacy
+                // 1.3 m planter footprint. Anything wider pokes past the
+                // 1.55 m clearance of the 1.9 m pedestrian walking line and
+                // the crowd visibly wades through the planter corners.
+                GameObject kitPlanter = PrefabUtility.InstantiatePrefab(planterPrefab, item.transform) as GameObject;
+                if (kitPlanter != null)
+                {
+                    kitPlanter.name = "Planter";
+                    kitPlanter.transform.localScale = Vector3.one * 0.65f;
+                    BoxCollider collider = item.AddComponent<BoxCollider>();
+                    collider.center = new Vector3(0f, 0.2f, 0f);
+                    collider.size = new Vector3(1.3f, 0.4f, 1.3f);
+                    return;
+                }
+            }
+
             EditorBuildUtility.CreateLocalBox("Planter", new Vector3(0f, 0.16f, 0f),
                 new Vector3(1.3f, 0.32f, 1.3f), planterMaterial, item.transform, false);
         }
@@ -168,6 +198,8 @@ namespace ObliteratusAI.EditorTools
             BoxCollider collider = bench.AddComponent<BoxCollider>();
             collider.center = new Vector3(0f, 0.42f, 0f);
             collider.size = new Vector3(1.92f, 0.84f, 0.84f);
+            // Phase 4 content interaction: benches are sittable.
+            bench.AddComponent<BenchSeat>();
         }
 
         private static void CreateBin(Transform parent, Vector3 position, Material material)
@@ -182,13 +214,21 @@ namespace ObliteratusAI.EditorTools
             collider.size = new Vector3(0.52f, 0.78f, 0.52f);
         }
 
-        private static void CreateBollard(Transform parent, Vector3 position, Material material)
+        private static void CreateBollard(
+            Transform parent, Vector3 position, Material material, GameObject kitPrefab)
         {
             GameObject item = new GameObject("Bollard");
             item.transform.SetParent(parent, false);
             item.transform.position = position;
-            EditorBuildUtility.CreateLocalCylinder("Post", new Vector3(0f, 0.4f, 0f),
-                new Vector3(0.17f, 0.4f, 0.17f), material, item.transform);
+            if (kitPrefab != null)
+            {
+                PrefabUtility.InstantiatePrefab(kitPrefab, item.transform);
+            }
+            else
+            {
+                EditorBuildUtility.CreateLocalCylinder("Post", new Vector3(0f, 0.4f, 0f),
+                    new Vector3(0.17f, 0.4f, 0.17f), material, item.transform);
+            }
             BoxCollider collider = item.AddComponent<BoxCollider>();
             collider.center = new Vector3(0f, 0.4f, 0f);
             collider.size = new Vector3(0.32f, 0.8f, 0.32f);

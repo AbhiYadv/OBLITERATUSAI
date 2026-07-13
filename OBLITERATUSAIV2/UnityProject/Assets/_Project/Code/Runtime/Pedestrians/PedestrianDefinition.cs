@@ -12,6 +12,7 @@ namespace ObliteratusAI.Pedestrians
     {
         [Header("Visual and movement")]
         [SerializeField] private GameObject pedestrianPrefab;
+        [SerializeField] private GameObject[] pedestrianPrefabVariants = System.Array.Empty<GameObject>();
         [SerializeField] private float minSpeed = 1.1f;
         [SerializeField] private float maxSpeed = 1.7f;
         [SerializeField] private float clipNaturalSpeed = 1.55f;
@@ -29,6 +30,24 @@ namespace ObliteratusAI.Pedestrians
         [SerializeField, Min(1f)] private float vehicleHurryMultiplier = 1.35f;
 
         public GameObject PedestrianPrefab => pedestrianPrefab;
+
+        /// <summary>
+        /// Prefab for pool slot `index`: cycles the variant list when one is
+        /// configured, otherwise the single legacy prefab.
+        /// </summary>
+        public GameObject GetPrefab(int index)
+        {
+            if (pedestrianPrefabVariants != null && pedestrianPrefabVariants.Length > 0)
+            {
+                GameObject variant =
+                    pedestrianPrefabVariants[Mathf.Abs(index) % pedestrianPrefabVariants.Length];
+                if (variant != null)
+                {
+                    return variant;
+                }
+            }
+            return pedestrianPrefab;
+        }
         public float MinSpeed => minSpeed;
         public float MaxSpeed => maxSpeed;
         public float ClipNaturalSpeed => clipNaturalSpeed;
@@ -47,6 +66,20 @@ namespace ObliteratusAI.Pedestrians
         public void Configure(GameObject prefab)
         {
             pedestrianPrefab = prefab;
+        }
+
+        /// <summary>
+        /// Variant wiring: authored character models replace the tint-based
+        /// hi-vis pattern (the Worker variants carry real vests).
+        /// </summary>
+        public void ConfigureVariants(GameObject fallbackPrefab, GameObject[] variants)
+        {
+            pedestrianPrefab = fallbackPrefab;
+            pedestrianPrefabVariants = variants ?? System.Array.Empty<GameObject>();
+            if (pedestrianPrefabVariants.Length > 0)
+            {
+                hiVisEvery = 0;
+            }
         }
     }
 }

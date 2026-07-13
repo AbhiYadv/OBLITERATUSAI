@@ -1,6 +1,8 @@
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ObliteratusAI.EditorTools
 {
@@ -8,10 +10,22 @@ namespace ObliteratusAI.EditorTools
     {
         private const int Width = 1280;
         private const int Height = 720;
+        private const string ScenePath = "Assets/_Project/Scenes/Test/PlayerSandbox.unity";
 
         [MenuItem("OBLITERATUS AI/Validation/Capture Legacy City Preview")]
         public static void Capture()
         {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
+            {
+                Debug.LogError($"Cannot capture city preview because the scene is missing: {ScenePath}");
+                return;
+            }
+
+            if (SceneManager.GetActiveScene().path != ScenePath)
+            {
+                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
             string projectRoot = Directory.GetParent(Application.dataPath).FullName;
             string logDirectory = Path.Combine(projectRoot, "Logs");
             Directory.CreateDirectory(logDirectory);
@@ -23,8 +37,8 @@ namespace ObliteratusAI.EditorTools
                 52f);
             RenderPreview(
                 Path.Combine(logDirectory, "LegacyCityStreetPreview.png"),
-                new Vector3(12f, 7f, -20f),
-                new Vector3(0f, 3f, 18f),
+                new Vector3(4.2f, 5.5f, -42f),
+                new Vector3(0f, 4f, 24f),
                 62f);
             Debug.Log($"Legacy city validation previews captured in {logDirectory}");
         }

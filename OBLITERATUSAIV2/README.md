@@ -53,3 +53,11 @@ Before major design, code, asset, or architecture decisions, read `GUARDRAIL.md`
 - `PERFORMANCE_BUDGET.md` defines measurable runtime limits.
 - `INITIAL_GAMEPLAY_REVIEW.md` compares the current city with GTA-style open-world design and ranks the next gameplay improvements.
 - `LEGACY_FEATURE_PARITY.md` tracks which old-project capabilities were restored, replaced, or deliberately deferred.
+
+## Third-Party City Art
+
+The central-downtown visual test uses the free CC0 Standard edition of
+[Quaternius' Downtown City MegaKit](https://quaternius.com/packs/downtowncitymegakit.html).
+The exact intake, optimization, placement constraints, and verification state
+are recorded in `DEVELOPMENT_LOG.md` and beside the imported files in
+`Assets/ThirdParty/Quaternius/DowntownCityMegaKitStandard/SOURCE.md`.

@@ -13,11 +13,24 @@ MonoBehaviour:
   m_Name: Pedestrian_Casual
   m_EditorClassIdentifier: 
   pedestrianPrefab: {fileID: 8748994388211553087, guid: c8484912e8d7d4950b41935d0fd2ce09, type: 3}
+  pedestrianPrefabVariants:
+  - {fileID: 7267692639175810886, guid: 6c75c444735034f079f436fc2326a536, type: 3}
+  - {fileID: 2406295025219208703, guid: d861de7f7664248f38304d238f867891, type: 3}
+  - {fileID: 9095096575076077289, guid: 6ff0fe810d638467f806e78e918f2258, type: 3}
+  - {fileID: 7866826070116787543, guid: 444fbae0636ff48f6a56468608c4d0e8, type: 3}
+  - {fileID: 2294853883958433510, guid: b26c2b9cb79a74154bb0369db9b6e7da, type: 3}
+  - {fileID: 2401214520437700820, guid: a3b395be17901448b852a84ace7a52b3, type: 3}
+  - {fileID: 3744206857041877527, guid: 8c66b294120854fbca76e3e0ce4e10ce, type: 3}
+  - {fileID: 4714003155713263109, guid: 9c016d235fb69486d99f5d325e9554c2, type: 3}
+  - {fileID: 315085754937681205, guid: d130ab3aba2584d798ac3610027ed38d, type: 3}
+  - {fileID: 6918715323883520387, guid: 854888d94987a44d79471e2ff7a47063, type: 3}
+  - {fileID: 2296849935581365086, guid: 93d7a15e05b68491daae6e24a7aa6d80, type: 3}
+  - {fileID: 4091247595208491086, guid: cfbd8d55f22d84976bfdd308b5d1522f, type: 3}
   minSpeed: 1.1
   maxSpeed: 1.7
   clipNaturalSpeed: 1.55
   hiVisTint: {r: 1, g: 0.839, b: 0.431, a: 1}
-  hiVisEvery: 3
+  hiVisEvery: 0
   minIdleInterval: 7
   maxIdleInterval: 16
   minIdleDuration: 1.4

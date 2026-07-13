@@ -487,3 +487,289 @@ Tests and verification:
 
 Parity detail and intentionally deferred old content are recorded in
 `LEGACY_FEATURE_PARITY.md`.
+
+## 2026-07-12 - Quaternius Downtown Art Integration
+
+Status: **Imported, generated, render verified, and automated Play Mode
+verified; hands-on exploration and standalone profiling pending**
+
+Asset intake:
+
+- Added the free Standard edition of Quaternius' Downtown City MegaKit under
+  `Assets/ThirdParty/Quaternius/DowntownCityMegaKitStandard`.
+- Preserved its CC0 license and a project-specific `SOURCE.md` record.
+- Retained all 153 Unity-oriented FBX files so later art passes can select
+  different modules. Omitted duplicate Unreal/Godot exports and optional HDR
+  interior cubemaps.
+- Resized source textures larger than 1024 px before import. The project copy
+  is approximately 36 MB instead of the original 244 MB download.
+- Added an import processor that disables animation, cameras, lights,
+  colliders, mesh readability, and other unused model data; textures are
+  compressed and capped at 1024 px. Eleven modular pieces with invalid source
+  normals are explicitly recalculated during import.
+
+Safe integration:
+
+- Added a replaceable `CityVisualSet` data asset rather than hard-coding model
+  references into traffic or world logic.
+- Added project-owned URP materials and prefab wrappers for the three complete
+  Standard-edition buildings. Imported FBX files remain unmodified.
+- The Small and Medium complete models are recorded as one-frontage infill
+  buildings. They remain available for later authored rows but are excluded
+  from automatic corner-lot placement because their side walls are blank.
+- The Large model has two street facades and is used on five eligible lots in
+  the three inner blocks surrounding the construction site. It is uniformly
+  fitted to each lot footprint, rotated so detailed sides face the nearest
+  roads, and given one simple generated BoxCollider based on final bounds.
+- Every imported placement has a procedural fallback. Existing roads,
+  sidewalks, road paint, signals, traffic routes, pedestrian paths, terrain,
+  garage, water, and interaction coordinates were not changed.
+- Quaternius road and sidewalk models are imported but intentionally inactive;
+  they require a future adapter matching the canonical 11 m road width and
+  current lane/crossing coordinates.
+
+Verification:
+
+- [x] Fresh Unity 6000.0.79f1 import and scene generation completed with no C#
+  errors, code warnings, or remaining FBX import errors.
+- [x] Generated three building prefabs, 14 project-owned URP materials, one
+  visual catalog, five downtown instances, and a refreshed reflection cubemap.
+- [x] Elevated and road-level renders were inspected. The road-level validator
+  now explicitly opens `PlayerSandbox` and places its camera on a canonical
+  road so lot art cannot enclose it.
+- [x] Unity Test Runner: 6 tests discovered, 6 passed, 0 failed, 0 skipped.
+- [x] Automated Play Mode smoke retained 24 traffic vehicles and 28
+  pedestrians and observed idle, curb wait, crossing, and 24 pooled recycles.
+- [x] No gameplay exceptions were logged during the smoke test.
+- [ ] Reload the externally updated `PlayerSandbox` in the already-open Unity
+  Editor and perform a hands-on collision, camera, traffic, and driving pass.
+- [ ] Measure the first standalone macOS memory/FPS baseline before expanding
+  Quaternius coverage or activating its modular roads.
+
+## 2026-07-12 - Whole-Map Quaternius Art Replacement
+
+Status: **Written and Roslyn compile verified; Unity regeneration, render
+inspection, and Play Mode verification pending**
+
+Direction change (user): the ~300 MB runtime-memory target is deprioritized
+for now, and the entire map should use Downtown City MegaKit art instead of
+the three-block pilot.
+
+Asset intake:
+
+- Replaced the 1024 px downsized kit textures with the original
+  full-resolution files (up to 2048 px) from the source download; `.meta`
+  files were preserved so every existing material reference is intact. All
+  153 FBX models were checksum-verified identical to the source download.
+- Import processor v2 (`GetVersion` bump forces reimport): readable meshes,
+  mesh compression off, and a 2048 px texture cap.
+
+Modular building system:
+
+- Measured every kit module offline from the pack's glTF export: wall tiles
+  are 2 m x 3 m (some 4 m) with the facade plane at local z = 0 facing +Z and
+  the base at y = 0; cornices are 2 m x 1 m; corner columns protrude past the
+  two facade planes.
+- New `QuaterniusModularBuildingBaker` assembles ten building designs from
+  the Brick, Metal, and Trim module families (4-24 floor rows, 22-34 m
+  footprints, including two glass towers and a pale-brick palette variant),
+  each with four detailed facades, per-family corner treatments, door tiles,
+  cornice ring, roof tiles, kit AC units, and a dark interior occluder box.
+- Every design is baked into one multi-submesh mesh asset plus prefab, so a
+  detailed building costs a handful of draw calls instead of hundreds of
+  module objects. Brick corner yaw is derived from measured mesh bounds, so
+  the bake is import-orientation proof.
+- `CityVisualSet` gained footprint-aware variant selection plus bollard,
+  planter, manhole, and AC-unit prop references; the previous height-only
+  API remains for compatibility.
+
+City-wide placement:
+
+- `LegacyCityPortBuilder` now tries kit buildings on every lot in all 16
+  blocks, towers included (the tower path previously always used procedural
+  boxes; the three-block pilot restriction is removed). The procedural
+  facades remain only as a fallback when the kit is not imported.
+- Roads, sidewalk blocks, and the city foundation are now UV-mapped slab
+  meshes using the kit asphalt and concrete textures with meter-scale UVs.
+  Every footprint, surface height, collider, and paint coordinate is
+  unchanged, so traffic routes, pedestrian loops, signals, and the road
+  paint overlay are unaffected.
+- Kit manhole covers are seeded along road lanes away from intersections.
+- Sidewalk bollards and street-tree planters use the kit props at the same
+  tuned positions and collider sizes; benches, bins, and umbrellas remain
+  procedural (no kit equivalent).
+- Streets keep the canonical 11 m width; the kit's 12/18 m street modules
+  remain intentionally inactive.
+
+Verification:
+
+- [x] All 153 kit FBX files checksum-match the source download; textures
+  re-copied at full resolution with GUIDs preserved.
+- [x] Runtime and editor assemblies compile with Unity 6000.0.79f1's bundled
+  Roslyn: zero errors, zero code warnings (new baker file included in the
+  compilation set).
+- [ ] Run `OBLITERATUS AI/Build Player Sandbox` in the Unity Editor to
+  reimport the kit (v2 importer), bake the modular building set, and
+  regenerate `PlayerSandbox.unity`.
+- [ ] Inspect elevated and road-level validation renders for module seams,
+  corner alignment, door placement, and ground-texture tiling.
+- [ ] Re-run the automated Play Mode smoke test (24 traffic vehicles, 28
+  pedestrians, pooled recycling) and hands-on drive the new city.
+
+## 2026-07-12 - Kenney Car Kit Vehicle Replacement
+
+Status: **Written and Roslyn compile verified; Unity regeneration and
+hands-on driving pass pending**
+
+Asset intake:
+
+- Added Kenney Car Kit 3.1 (CC0) under `Assets/ThirdParty/Kenney/CarKit`
+  with its license and a `SOURCE.md` record: all 50 GLB models with embedded
+  palette textures, imported through the existing glTFast pipeline.
+- Offline GLB inspection confirmed the authored convention: forward = +Z
+  (front wheels at +Z), named `wheel-front-left`-style nodes, ~2.0 m wide
+  toy proportions.
+
+Vehicle wiring (visual swap only; no gameplay/physics code changed):
+
+- Traffic: Car2 -> Kenney `suv`, Car9 -> Kenney `hatchback-sports`,
+  Truck -> Kenney `delivery`. The shuttle pod remains the ported legacy
+  concept. Parked cars reuse the Car2/Car9 wrappers automatically.
+- Player sedan: Kenney `sedan` replaces the legacy car9 extraction in
+  `LegacyCityPortBuilder`; the same `LegacyCar9Visual.prefab` path is
+  reused so `PrototypeSedan.asset` keeps its reference.
+- Kenney visuals are normalized to the definitions' collision width
+  (cars 2.04 m, truck 2.5 m) instead of the legacy target length, because
+  length-normalizing the kit's near-square proportions would produce 3.4 m
+  wide cars that visually clip oncoming lanes. Truck spacing length reduced
+  8.8 -> 6.5 m to suit the stubbier model.
+- Kenney models use no forward flip (+Z authored); the legacy GLBs remain a
+  fallback build path with their documented 180-degree flip.
+- Kenney `wheel-*` nodes match the existing wheel-pivot regex, so traffic
+  wheel spin keeps working; the truck gains spinning wheels (the legacy
+  truck had none).
+- The player vehicle's box-collider footprint now follows the measured
+  visual bounds (the vertical center/size stay at the tuned ride-height
+  values); the old hardcoded 4.15 m length left an invisible bumper around
+  the much shorter Kenney sedan.
+
+Verification:
+
+- [x] Runtime and editor assemblies compile with the bundled Roslyn: zero
+  errors, zero code warnings.
+- [ ] Run `OBLITERATUS AI/Build Player Sandbox` (imports the kit, rebuilds
+  vehicle wrappers/definitions, regenerates the scene).
+- [ ] Verify all vehicles drive nose-first, wheels spin, parked cars sit at
+  curbs, and the sedan fits its garage slot.
+
+## 2026-07-13 - Quaternius Animated Characters (Player And Crowd)
+
+Status: **Written and Roslyn compile verified; Unity regeneration and
+hands-on look pass pending**
+
+Asset intake:
+
+- Added 13 characters from Quaternius' Ultimate Animated Character Pack
+  (Nov 2019 free edition, CC0) under
+  `Assets/ThirdParty/Quaternius/UltimateAnimatedCharacters` with license and
+  `SOURCE.md`. Each glTF is self-contained (embedded buffers, no textures)
+  and carries the full clip set (Idle, Walk, Run, SitDown, ...).
+
+Character assignment:
+
+- **Player**: `Suit_Male`, reserved exclusively for the player (absent from
+  the crowd roster). CesiumMan remains the fallback when the pack is
+  missing.
+- **Pedestrians**: twelve civilians (Casual family x7, Worker x2, OldClassy
+  x2, Suit_Female). `PedestrianDefinition` gained a prefab-variant array;
+  the pool cycles variants deterministically by slot index. The hi-vis
+  full-body tint hack is disabled when variants exist — the Worker models
+  carry real vests.
+
+Animation upgrade:
+
+- New `CharacterAnimationBuilder` bakes per-character Idle/Walk animator
+  controllers (a `Walking` bool with short crossfades; clips forced to
+  loop).
+- `PlayerAnimationDriver` and `PedestrianAgent` detect the `Walking`
+  parameter at configure time: with it, idling plays the real idle clip at
+  authored pace and walking scales `Animator.speed` to movement; without
+  it, the legacy behavior (frozen pose / slow-motion walk) is preserved.
+- No behavior, pooling, crossing, or recycling logic changed.
+
+Verification:
+
+- [x] Runtime and editor assemblies compile with the bundled Roslyn: zero
+  errors, zero code warnings.
+- [ ] Run `OBLITERATUS AI/Build Player Sandbox`; confirm the suit player,
+  varied crowd, idle animations at rest, and no foot sliding at walk speed
+  (tune `clipNaturalSpeed` on `Pedestrian_Casual.asset` and
+  `authoredWalkSpeed` on the player if pacing looks off).
+- [ ] Confirm the characters face their travel direction; if a model walks
+  backwards, add a 180-degree yaw in the visual attach step.
+
+## 2026-07-13 - Run Animation And Sittable Benches
+
+Status: **Written and Roslyn compile verified; Unity regeneration and
+hands-on pass pending**
+
+Run gait:
+
+- `CharacterAnimationBuilder` controllers gained a Run state ("Running"
+  bool): Idle/Walk/Run with short crossfades, run clip loop-forced.
+- `PlayerAnimationDriver`: sprinting past 6 m/s (walk 5, sprint 8) flips to
+  the run clip and scales playback against a serialized authored run pace
+  (4.4 m/s default).
+- `PedestrianAgent`: movement above 2.05 m/s (crossing 2.35, hurry 3.17,
+  walk max 1.7) plays the run clip at a 3.1 m/s natural pace, so crossings
+  read as a jog. Legacy single-clip controllers keep the old behavior.
+
+Sittable benches (Phase 4 content interaction + one interaction animation):
+
+- Controllers add SitDown/StandUp states on a "Sitting" bool. SitDown is
+  not looped, so its final frame holds the seated pose; StandUp plays
+  through back to Idle on exit time.
+- New `BenchSeat` (`IInteractable`, VehicleSeat occupancy pattern): "E  Sit
+  on bench" prompt through the existing interactor; sitting disables the
+  motor/interactor/animation driver, parks the player on a serialized seat
+  anchor, and raises Sitting. E stands up: StandUp plays for its timed
+  duration, then control returns at the captured pre-sit position. Players
+  whose active rig lacks seat clips (CesiumMan fallback) are refused
+  gracefully.
+- `CityLifeDetailBuilder` adds `BenchSeat` to every generated bench.
+
+Verification:
+
+- [x] Runtime and editor assemblies compile with the bundled Roslyn: zero
+  errors, zero code warnings.
+- [ ] Regenerate the sandbox; verify sprint switches to the run gait,
+  crossing pedestrians jog, and bench sit/stand aligns with the seat (tune
+  `seatLocalPosition` on `BenchSeat` if the pose floats or clips).
+
+Addendum (bench sit fixes, play-test feedback):
+
+- The sit animation replayed forever and the character swung through the
+  bench: glTFast imports every clip with looping enabled, and the first
+  pass only forced looping ON for locomotion clips. SitDown/StandUp are now
+  explicitly forced non-looping, so SitDown holds its final seated pose.
+- Measured the SitDown end pose from the source glTF: pelvis lands 0.31 m
+  behind and 0.52 m above the planted feet, matching the 0.505 m bench
+  seat height. The seat anchor moved to put the feet 0.30 m ahead of the
+  seat center so the seated pelvis lands on the seat.
+- Both assemblies recompiled cleanly; regenerate the sandbox to rebuild
+  the controllers with the corrected clip settings.
+
+Addendum (crossing-corner geometry fix, play-test feedback):
+
+- Pedestrians appeared to get stuck on the corner bollards ("railings")
+  when entering crosswalks. Crosswalk corridors enter the sidewalk exactly
+  1.9 m from the perpendicular block edge; the bollard rows started at
+  2.0 m with a 0.55 m inset, so every crossing pedestrian intersected the
+  first bollard almost dead-center (they move kinematically, so they waded
+  through it rather than being blocked, and waiting pedestrians stood
+  inside the cluster). Bollard rows moved to start at 3.0 m, clearing all
+  crossing lines by more than the capsule + bollard radii.
+- The kit tree planter (scaled 1.7 m) intruded 0.24 m into the 1.9 m
+  walking loop's clearance; restored the legacy 1.3 m footprint (scale
+  0.65) and matching collider.
+- Editor assembly recompiled cleanly; regenerate the sandbox to apply.

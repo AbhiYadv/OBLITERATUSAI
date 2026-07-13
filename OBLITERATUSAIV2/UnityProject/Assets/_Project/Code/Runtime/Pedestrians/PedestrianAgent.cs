@@ -41,6 +41,12 @@ namespace ObliteratusAI.Pedestrians
 
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[8];
         private static readonly Collider[] OverlapBuffer = new Collider[16];
+        private static readonly int WalkingParameter = Animator.StringToHash("Walking");
+        private static readonly int RunningParameter = Animator.StringToHash("Running");
+        // Above walking range (max 1.7 m/s) but below crossing speed (2.35),
+        // so crossings and vehicle-hurry read as a jog.
+        private const float RunAnimationThreshold = 2.05f;
+        private const float RunClipNaturalSpeed = 3.1f;
 
         private PedestrianDefinition _definition;
         private CityLayout.BlockRect _block;
@@ -48,6 +54,8 @@ namespace ObliteratusAI.Pedestrians
         private Rigidbody _body;
         private Collider _collider;
         private Animator _animator;
+        private bool _hasWalkingParameter;
+        private bool _hasRunningParameter;
         private int _senseMask;
         private DeterministicRandom _random;
 
@@ -107,6 +115,22 @@ namespace ObliteratusAI.Pedestrians
             _body = GetComponent<Rigidbody>();
             _collider = GetComponent<Collider>();
             _animator = GetComponentInChildren<Animator>();
+            _hasWalkingParameter = false;
+            _hasRunningParameter = false;
+            if (_animator != null && _animator.runtimeAnimatorController != null)
+            {
+                foreach (AnimatorControllerParameter parameter in _animator.parameters)
+                {
+                    if (parameter.nameHash == WalkingParameter)
+                    {
+                        _hasWalkingParameter = true;
+                    }
+                    else if (parameter.nameHash == RunningParameter)
+                    {
+                        _hasRunningParameter = true;
+                    }
+                }
+            }
             _clipNaturalSpeed = Mathf.Max(0.1f, definition.ClipNaturalSpeed);
             Recycle(blockIndex, startFraction, speed, behaviorSeed);
         }
@@ -542,9 +566,29 @@ namespace ObliteratusAI.Pedestrians
                 return;
             }
 
-            _animator.speed = movementSpeed <= 0.05f
-                ? IdleAnimationPace
-                : movementSpeed / _clipNaturalSpeed;
+            bool moving = movementSpeed > 0.05f;
+            if (_hasWalkingParameter)
+            {
+                // Idle/Walk/Run controller: the real idle clip plays at its
+                // authored pace while stopped; moving still scales foot
+                // speed to movement speed against the active gait's pace.
+                bool running = _hasRunningParameter && movementSpeed > RunAnimationThreshold;
+                _animator.SetBool(WalkingParameter, moving);
+                if (_hasRunningParameter)
+                {
+                    _animator.SetBool(RunningParameter, running);
+                }
+                _animator.speed = moving
+                    ? movementSpeed / (running ? RunClipNaturalSpeed : _clipNaturalSpeed)
+                    : 1f;
+                return;
+            }
+
+            // Legacy single-clip controller: slow-motion walk stands in for
+            // an idle animation.
+            _animator.speed = moving
+                ? movementSpeed / _clipNaturalSpeed
+                : IdleAnimationPace;
         }
 
         private void ScheduleNextIdle()
